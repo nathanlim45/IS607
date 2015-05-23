@@ -1,0 +1,41 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265\cocoasubrtf200
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs24 \cf0 CREATE TABLE etm\
+(\
+  employee_id integer NOT NULL,\
+  name character varying NOT NULL,\
+  job_title character varying,\
+  team character varying,\
+  supervisor_id integer,\
+  CONSTRAINT employee_id PRIMARY KEY (employee_id)\
+)\
+WITH (\
+  OIDS=FALSE\
+);\
+ALTER TABLE etm\
+  OWNER TO postgres;\
+\
+INSERT INTO etm\
+(name, job_title, team, supervisor_id)\
+VALUES('Michael Schaefer', 'ceo', NULL, NULL),\
+('Emiily Susskind', 'vp', NULL, 1),\
+('Rob Weisstuch', 'vp', NULL, 1),\
+('Katherine Elliott', 'director', 'sales', 2),\
+('Aly Alibhai', 'director', 'production', 2),\
+('Joshua Bell', 'director', 'marketing', 3),\
+('Rick Dobbis', 'director', 'human resource', 1),\
+('Aidan Fitzmaurice', 'secretary', NULL, 1),\
+('Victor Goldberg', 'sales analyst', 'sales', 4),\
+('Karen Karlsrud', 'manager', 'sales', 4),\
+('Andrew Malik', 'production analyst', 'production', 5),\
+('Joseph Mcdonald', 'manager', 'production', 5),\
+('Lori Murphy', 'marketing analyst', 'marketing', 6),\
+('Amie Patel', 'manager', 'marketing', 6),\
+('Steven Williams', 'manager', 'marketing', 6),\
+('Diana Broberg', 'recruiter', 'human resource', 7);\
+\
+}

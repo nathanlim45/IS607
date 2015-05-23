@@ -1,0 +1,23 @@
+[
+  {
+    "title": "Harry Potter and the Sorcerer's Stone",
+    "authors": ["J.K. Rowling"],
+    "price": 7.48,
+    "type": "paperback",
+    "pages": 320
+  },
+  {
+    "title": "The Chronicles of Narnia",
+    "authors": ["C.S. Lewis","Pauline Baynes"],
+    "price": 22.34,
+    "type": "hardcover",
+    "pages": 784
+  },  
+  {
+    "title": "The Fellowship of the Ring",
+    "authors": ["J.R.R. Tolkien"],
+    "price": 10.66,
+    "type": "paperback",
+    "pages": 432
+  }
+]

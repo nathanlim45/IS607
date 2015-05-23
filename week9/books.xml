@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<books>
+     <book>
+	<title>Harry Potter and the Sorcerer's Stone</title>
+	<authors>J.K. Rowling</authors>
+	<price>7.48</price>
+	<type>paperback</type>
+	<pages>320</pages>
+     </book>
+     <book>
+	<title>The Chronicles of Narnia</title>
+	<authors>C.S. Lewis, Pauline Baynes</authors>
+	<price>22.34</price>
+	<type>hardcover</type>
+	<pages>784</pages>
+     </book>
+     <book>
+	<title>The Fellowship of the Ring</title>
+	<authors>J.R.R. Tolkien</authors>
+	<price>10.66</price>
+	<type>paperback</type>
+	<pages>432</pages>
+     </book>
+</books>

@@ -1,0 +1,61 @@
+---
+title: "IS607 - Week 10"
+author: "Nathan Lim"
+date: "March 31, 2015"
+output: html_document
+---
+
+* * *
+
+## Table of Contents
+* [Assignment](#Assignment)
+* [DATA from HTML](#DATA from HTML)
+* [Conclusion](#Conclusion)
+
+* * *
+
+## <a name="Assignment"></a>Assignment
+
+Pick three of your favorite books on one of your favorite subjects. At least one of the books should have more than one author. For each book, include the title, authors, and two or three other attributes that you find interesting.
+Take the information that you’ve selected about these three books, and separately create three files which store the book’s information in HTML (using an html table), XML, and JSON formats (e.g. “books.html”, “books.xml”, and “books.json”). To help you better understand the different file structures, I’d prefer that you create each of these files “by hand” unless you’re already very comfortable with the file formats.
+
+
+ Attributes I chose,
+
+* Title
+* Authors
+* Price
+* Type(hardcover, paperbook)
+* Pages
+
+
+```{r, warning=FALSE, message=FALSE}
+library(RCurl)
+library(XML)
+library(jsonlite)
+library(knitr)
+```
+
+```{r}
+#assign URLs 
+html <- "http://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_population"
+```
+
+* * *
+
+## <a name="DATA from HTML"></a>DATA from HTML
+
+```{r}
+url_html <- getURL(html)
+data_html <- readHTMLTable(url_html)
+str(data_html)
+book_html <- data_html[[1]]
+str(book_html)
+kable(book_html)
+```
+
+* * *
+
+## <a name="Conclusion"></a>Conclusion
+
+The values of each table are identical, though, their data types and forms are different depending on the data forms. So, to get the same exact three data frames and tables from each data, extra works are necessary. 

@@ -1,0 +1,38 @@
+---
+title: "IS607_Assign11"
+author: "Nathan Lim"
+date: "April 13, 2015"
+output: html_document
+---
+
+The New York Times web site provides diverse APIs including article search, books, the community, etc.
+Among them, I got "THE EVENT LISTINGS API" key from the web site.
+What I want to do is to retrieve Jazz performances in Manhattan between 2015-04-13 and 2015-04-20
+
+```{r, warning=FALSE, message=FALSE}
+library(RCurl)
+library(rjson)
+library(dplyr)
+library(plyr)
+library(knitr)
+```
+
+Get URL, including API key and filters(Manhattan, dates between 2015-04-13 and 2015-04-20)
+```{r, warning=FALSE, message=FALSE}
+theURL <- "http://api.nytimes.com/svc/events/v2/listings.json?filters=category:Jazz,borough:Manhattan&date_range=2015-04-13:2015-04-20&api-key=95a41335ddef20739e14c93a36b67c0d:5:71828133"
+url_json <- getURL(theURL)
+data = fromJSON(url_json)
+```
+
+Select the "result" list, which is 4th from the list, and then change the result list to a data frame
+```{r, warning=FALSE, message=FALSE, results="hide"}
+str(data)
+rdf <- data[[4]]
+rdf2 <- ldply(rdf, function(x){data.frame(x)})
+```
+
+Select columns we want to know using "dplyr"
+```{r}
+rdf_new <-rdf2%>%
+        select(event_name, venue_name, street_address, date_time_description, category)
+kable(distinct(rdf_new))

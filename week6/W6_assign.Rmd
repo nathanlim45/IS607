@@ -1,0 +1,200 @@
+---
+title: "IS607 - Week6 Assignment"
+author: "Nathan Lim(Seoungyoon Lim)"
+date: "March 5, 2015"
+output: html_document
+---
+
+* * *
+## IS607 - Week6
+### Seoungyoon Lim(Nathan Lim)
+
+* * *
+
+## Table of Contents
+* [Background](#Background)
+* [Math score](#Math score)
+* [ELA score](#ELA score)
+* [Corelation](#Corelation)
+* [Conclusion](#Conclusion)
+
+* * *
+## <a name="Background"></a>Background
+
+To assess NYC schools, NYC department of education has schools in the city take a math and ELA test. I would like to look through these scores and compare this with a certain school(Catherine and Count Basie middle school, PS72)'s score.
+For this analysis, I have downloaded 2013~2014 math and ELA score files from a NYC Department of Education web page.
+
+```{r}
+library(ggplot2)
+
+math_gender <- read.csv(file="/Users/seoungyoonlim/Documents/cuny/IS607/week6/math_gender.csv",header=T)
+
+#1. Identify which variables in your data set are numeric, and which are categorical (factors). Change Year,Category variables From integer to Factor and Change Mean.Scale.Score From Factor to numeric
+str(math_gender)
+math_gender$Year<-as.factor(math_gender$Year)
+math_gender$Category<-as.factor(math_gender$Category)
+math_gender$Mean.Scale.Score<-as.numeric(math_gender$Mean.Scale.Score)
+
+#Make table that has only PS 72 school's math result
+ps72<-math_gender[grep('BASIE', math_gender[,1]),]
+ps72
+ps72_all<-ps72[grep('All', ps72[,2]),]
+ps72_all
+
+#Make table that has total numbers of each school
+math_g_all<-math_gender[grep('All', math_gender[,2]),]
+head(math_g_all)
+
+#2. Generate summary level descriptive statistics
+summary(math_g_all[which(math_g_all$Year==2013),6])
+summary(ps72_all[which(ps72_all$Year==2013),6])
+summary(math_g_all[which(math_g_all$Year==2014),6])
+summary(ps72_all[which(ps72_all$Year==2014),6])
+
+#3. Determine the frequency for one of the categorical variables.
+table(math_g_all$Category)
+
+#4. Determine the frequency two categorical variables
+table(math_g_all$Category, math_g_all$Year)
+
+```
+
+
+The differences between mean of NYC average and mean of the school are 11.83 points(2013) and  16.92(2014).
+The gap between the school's average and NYC average has increased.
+
+* * *
+## <a name="Math score"></a>Math score
+
+```{r}
+##5.Create a graph for a single numeric variable. Draw boxplots by Gender
+p1<-qplot(Category, Mean.Scale.Score, data=math_g_all, geom="boxplot", fill=Category, main='Math score by Gender', xlab='Gender', ylab='Math score')
+p1+geom_hline(yintercept = c(mean(ps72_all$Mean.Scale.Score[1],
+                            ps72_all$Mean.Scale.Score[3]),
+                            mean(ps72_all$Mean.Scale.Score[2],
+                            ps72_all$Mean.Scale.Score[4]))
+             ,color=c("red","darkblue"), label=c("2013","2014"))
+```
+
+* * *
+
+As we can see above, Female students' math score is a little higher than male students' one. The same trend is shown in ps 72 school. But, while the school's female score are around at 1st quantile, boy's score are over the 1st quantile of NYC boy's math boxplot. 
+
+* * *
+
+```{r}
+#Draw boxplots by Year
+p2<-qplot(Year, Mean.Scale.Score, data=math_g_all, fill=Year, geom="boxplot", main='Math score by year', xlab='Year', ylab='Math score')
+p2+geom_hline(yintercept = c(mean(ps72_all$Mean.Scale.Score[1],
+                            ps72_all$Mean.Scale.Score[2]),
+                            mean(ps72_all$Mean.Scale.Score[3],
+                            ps72_all$Mean.Scale.Score[4]))
+             ,color=c("red","darkblue"), label=c("2013","2014"))
+```
+
+The above boxplot shows that the variance of math scores of 2013 and 2014. The absolute scores are not meaningful, since the difficulties of two tests are different. But we can see that the score of NYC students has increased, though, the score of PS72 has decreased.
+
+* * *
+
+## <a name="ELA score"></a>ELA score
+
+Now I would like to see ELA scores.
+
+
+```{r}
+ela<- read.csv(file="/Users/seoungyoonlim/Documents/cuny/IS607/week6/ELA.csv",header=T)
+str(ela)
+#1. Identify which variables in your data set are numeric, and which are categorical (factors). Change Year,Category variables From integer to Factor and Change Mean.Scale.Score From Factor to numeric
+ela$Year<-as.factor(ela$Year)
+ela$Category<-as.factor(ela$Category)
+ela$Mean.Scale.Score<-as.numeric(ela$Mean.Scale.Score)
+
+#Make table that has only PS 72 school's ELA result
+ps72_ela<-ela[grep('BASIE', ela[,1]),]
+ps72_ela
+ps72_ela_all<-ps72_ela[grep('All', ps72_ela[,2]),]
+ps72_ela_all
+
+#Make table that has total numbers of each school
+ela_all<-ela[grep('All', ela[,2]),]
+head(ela_all)
+
+#2. Generate summary level descriptive statistics
+summary(ela_all[which(ela_all$Year==2013),6])
+summary(ps72_ela_all[which(ps72_ela_all$Year==2013),6])
+summary(ela_all[which(ela_all$Year==2014),6])
+summary(ps72_ela_all[which(ps72_ela_all$Year==2014),6])
+
+
+
+```
+
+
+The differences between mean of NYC average and mean of the school are 10.62 points(2013) and  13.62(2014).
+The gap between the school's average and NYC average has increased.
+
+* * *
+
+```{r}
+#Draw boxplots by Gender
+p3<-qplot(Category, Mean.Scale.Score, data=ela_all, geom="boxplot", fill=Category, main='ELA score by Gender', xlab='Gender', ylab='ELA score')
+p3+geom_hline(yintercept = c(mean(ps72_ela_all$Mean.Scale.Score[1],
+                            ps72_ela_all$Mean.Scale.Score[3]),
+                            mean(ps72_ela_all$Mean.Scale.Score[2],
+                            ps72_ela_all$Mean.Scale.Score[4]))
+             ,color=c("red","darkblue"), label=c("2013","2014"))
+```
+
+
+As we can see above, Female students are generally better than male students. The same trend is shown in ps 72 school. The school's both female, male scores are around at 1st quantile of NYC score.
+
+* * *
+
+```{r}
+#Draw boxplots by Year
+p4<-qplot(Year, Mean.Scale.Score, data=ela_all, fill=Year, geom="boxplot", main='ELA score by year', xlab='Year', ylab='ELA score')
+p4+geom_hline(yintercept = c(mean(ps72_ela_all$Mean.Scale.Score[1],
+                            ps72_ela_all$Mean.Scale.Score[2]),
+                            mean(ps72_ela_all$Mean.Scale.Score[3],
+                            ps72_ela_all$Mean.Scale.Score[4]))
+             ,color=c("red","darkblue"), label=c("2013","2014"))
+```
+
+
+The above boxplot shows that the variance of ELA scores of 2013 and 2014. The absolute scores are not meaningful, though, two boxplot look almost the same. It implys the difficulties of two tests are not that different but we can see the score of PS72 has decreased.
+
+* * *
+## <a name="Corelation"></a>Corelation
+
+Now I would like to check the corelation between Math score and ELA score.
+
+* * *
+
+```{r}
+#6.Create a graph for a two numeric variable
+# build a new data including two scores
+newdata<-cbind(math_g_all, ela_all$Mean.Scale.Score)
+head(newdata)
+names(newdata)[names(newdata)=="ela_all$Mean.Scale.Score"] <- "ela_score"
+
+newps72<-cbind(ps72_all,ps72_ela_all$Mean.Scale.Score)
+names(newps72)[names(newps72)=="ps72_ela_all$Mean.Scale.Score"] <- "ela_score"
+
+
+cor(newdata$Mean.Scale.Score, newdata$ela_score)
+cor(newps72$Mean.Scale.Score, newps72$ela_score)
+
+p5<-ggplot(data=newdata,aes(Mean.Scale.Score, ela_score), main='Scatter of math and ELA')+geom_point()+facet_grid(Category~Year)
+p5+geom_point(data=newps72,aes(Mean.Scale.Score, ela_score, color='P.S. 72'), )+xlab('Math')+ylab('ELA')+labs(title='NYC Math and ELA scores, grade 3 to 8')+theme(legend.title=element_blank())
+```
+
+
+The plot shows the corelation between two scores. we can say that the school that is good at math is normally good at ELA too, or we can say the opposite way. The red dots imply the school position among all NYC schools
+
+* * *
+
+## <a name="Conclusion"></a>Conclusion
+
+The school's math score is around at low 25% of NYC schools, and ELA score is around at low 30% of NYC schools. The level of math test 2014 is a little bit easier than 2013's one, but the school's score has decreased. The level of ELA test 2014 is the almost same 2013's test but the school's ELA score has also decreased.
+Female student's scores are higher at both tests. ELA scores has shown this gap significantly.
+The same patten is shown at PS 72 scores exactly.

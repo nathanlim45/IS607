@@ -1,0 +1,56 @@
+---
+title: "Week12 Assign"
+author: "Nathan Lim"
+date: "April 20, 2015"
+output: html_document
+---
+The task is,
+
+(1) Write the contents of a json file of your choosing into a mongodb database, then</br>
+(2) Use R to display some of the information from the mongodb database.
+
+* * *
+```{r}
+library(rjson)
+library(rmongodb)
+library(knitr)
+```
+
+* * *
+Before I did R coding, I made a database in MongoDB by importing "new york jazz perfomance" data using "mongoimport".
+
+Among the collections below, the data I want is "nyjazz" that has information about jazz musicians, addresses, etc.
+
+```{r}
+mongo <- mongo.create()
+mongo
+mongo.is.connected(mongo)
+if(mongo.is.connected(mongo) == TRUE) {
+        mongo.get.databases(mongo)
+}
+
+if(mongo.is.connected(mongo) == TRUE) {
+        db <- "mydb"
+        mongo.get.database.collections(mongo, db)
+}
+```
+
+* * *
+
+I changed the bson to list, and then changed it to a data frame.
+
+```{r}
+coll <- "mydb.nyjazz"
+tmp <-  mongo.find.one(mongo,coll)
+class(tmp)
+mgdata <- mongo.bson.to.list(tmp)
+df <- data.frame(musician=mgdata[[2]], place=mgdata[[3]], address=mgdata[[4]], time=mgdata[[5]], stringsAsFactors = FALSE)
+str(df)
+```
+
+* * *
+Searching jazz performances in Lincon center
+
+```{r}
+kable(df[grep('Center', df$place),])
+```

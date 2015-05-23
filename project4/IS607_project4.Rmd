@@ -1,0 +1,55 @@
+---
+title: "IS607 Project4"
+author: "Nathan Lim"
+date: "April 20, 2015"
+output: html_document
+---
+* * *
+This project is for scraping the web pages, "http://www.r-bloggers.com/search/web%20/ page1 to page17", and store these into R data frame. The total number of rows is 166 that the site says.
+
+```{r, warning=FALSE, message=FALSE, results="hide"}
+library(XML)
+library(RCurl)
+library(knitr)
+```
+* * *
+To scrape date, title and author, I made a 'scraper' function.
+
+```{r, warning=FALSE, message=FALSE, results="hide"}
+scraper <- function(page){
+        the_url=paste("http://www.r-bloggers.com/search/web%20scraping/page/",page, sep="")
+        SOURCE <- getURL(the_url)
+        PARSED <- htmlParse(SOURCE)
+        date=xpathSApply(PARSED, "//div[@class='date']",xmlValue)[1:10]
+        title=xpathSApply(PARSED, "//h2/a[@title]",xmlValue)[3:12]
+        author=xpathSApply(PARSED, "//a[@rel='author']",xmlValue)[1:10]
+        author <- gsub("\\/\\*.+\\*\\/","",author)
+        na.omit(data.frame(date,title,author,page))
+}
+```
+
+* * *
+To scrape one page, we can put a number between 1 and 17 into 'page' argument
+
+```{r, warning=FALSE, message=FALSE}
+kable(scraper(2))
+kable(scraper(14))
+```
+
+* * *
+To scrape all the pages, I made a list and used 'for' statement, and then change it to a dataframe.
+
+```{r, warning=FALSE, message=FALSE}
+output <- list()
+for(i in 1:17){
+output[[i]] <- scraper(i)}
+output[[1:2]]
+df <- do.call(rbind, output) #if you want a dataframe, not a list
+kable(df)
+str(df)
+```
+
+* * *
+The result shows 165 rows, which is dfferent from 166, what the web site says.
+Each page has 10 articles, but page6 has only 9 articles and page17 has 6 articles.
+Therefore, 165(10*15+9+6=165) is right result.

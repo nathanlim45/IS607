@@ -1,0 +1,346 @@
+---
+title: "ZAGAT score and NYC Inspection score"
+author: "Nathan Lim"
+date: "May 22, 2015"
+output: slidy_presentation
+---
+
+## Motivation
+
+Many people think that ZAGAT scores are believable. I also often check ZAGAT score before I reserve restaurants. I was curious if the ZAGAT scores correlated to cleanliness or healthy food.<br>
+<br>
+This project is to look relations between ZAGAT scores and NYC restaurant inspection scores. While ZAGAT scores are given by critics and focus on food decoration and service of restaurants, the inspection conducted by Heath department focuses on safety and health of food.<br>
+I would like to check if ZAGAT high rated restaurants are detected less by NYC restaurant inspection.
+While a high ZAGAT score is positive, a high score in the NYC inspection is negative. 
+
+---
+
+## Packages for the project
+
+```{r, warning=FALSE, message=FALSE}
+library(rjson)    #data scrape
+library(XML)      #data scrape
+library(RCurl)    #data scrape
+library(tidyr)    #cleaning data
+library(dplyr)    #cleaning data
+library(ggplot2)  #data analysis and visualization
+library(ggmap)    #data analysis and visualization
+library(GGally)   #data analysis and visualization
+library(ggvis)    #data analysis and visualization
+library(knitr)    #presentation
+```
+
+---
+
+## DATA Acquisition
+
+#### CSV file - Restaurant inspection data from 
+ "https://data.cityofnewyork.us"
+           
+#### Web scrape- ZAGAT best-restaurant list
+ "https://www.zagat.com/best-restaurants"
+
+---
+
+## DATA Acquisition 
+
+#### Load restaurant inspection data from NYC opendata
+
+```{r, warning=FALSE, message=FALSE}
+insp <- read.csv(file="/users/seoungyoonlim/documents/cuny/IS607/final/nyc_restaurant_inspection_results.csv", header=TRUE)
+str(insp)
+```
+
+---
+
+## DATA Acquisition 
+
+#### Scrape Zagat best-restaurant list in NYC
+
+```{r, warning=FALSE, message=FALSE}
+
+the_url="https://www.zagat.com/best-restaurants/new-york"
+
+SOURCE <- getURL(the_url)
+PARSED <- htmlParse(SOURCE)
+restaurant=xpathSApply(PARSED, "//p[@class='title']",xmlValue)
+score_food=xpathSApply(PARSED, "//li[@class='score food']",xmlValue)
+score_decor=xpathSApply(PARSED, "//li[@class='score decor']",xmlValue)[2:101]
+score_service=xpathSApply(PARSED, "//li[@class='score service']",xmlValue)[2:101]
+cost=xpathSApply(PARSED, "//li[@class='score cost']",xmlValue)[2:101]
+
+nyc100 <- cbind(restaurant, score_food, score_decor, score_service, cost)
+head(nyc100)
+write.table(nyc100,file="zagat_nyc100.csv",sep=",",row.names=F)
+
+the_url2="https://www.zagat.com/best-restaurants/new-york/downtown-and-brooklyn"
+SOURCE2 <- getURL(the_url2)
+PARSED2 <- htmlParse(SOURCE2)
+restaurant2=xpathSApply(PARSED2, "//p[@class='title']",xmlValue)
+score_food2=xpathSApply(PARSED2, "//li[@class='score food']",xmlValue)
+score_decor2=xpathSApply(PARSED2, "//li[@class='score decor']",xmlValue)[2:101]
+score_service2=xpathSApply(PARSED2, "//li[@class='score service']",xmlValue)[2:101]
+cost2=xpathSApply(PARSED2, "//li[@class='score cost']",xmlValue)[2:101]
+
+dtown100=cbind(restaurant2, score_food2, score_decor2, score_service2, cost2)
+write.table(dtown100,file="zagat_dtown100.csv",sep=",",row.names=F)
+names(dtown100) <- names(nyc100) 
+z_nyc=rbind(nyc100, dtown100)
+```
+
+---
+
+## DATA Clean-up 
+
+#### NYC Inspection Data clean-up
+
+```{r, warning=FALSE, message=FALSE}
+names(insp)
+new_insp <- insp[,c(2,3,5,6,8:12,14)]
+#convert numeric to Date type
+new_insp$INSPECTION.DATE <-as.Date(new_insp$INSPECTION.DATE,format='%m/%d/%Y')
+
+#delete space at the end
+new_insp$DBA <- gsub(" $","", new_insp$DBA, perl=T)
+new_insp$STREET <- gsub("^\\s+|\\s+$", "", new_insp$STREET)
+new_insp$STREET <- gsub("   "," ", new_insp$STREET)
+new_insp$ZIPCODE <- gsub(" $","", new_insp$ZIPCODE, perl=T)
+new_insp$CUISINE.DESCRIPTION <- gsub(" $","", new_insp$CUISINE.DESCRIPTION, perl=T)
+```
+
+
+---
+
+## DATA Clean-up
+
+### Add inspection grade and Subset of the most recent data
+#### The NYC health department' standard
+
+A: Inspection score 0 ~ 13 <br>
+B: Inspection score 14 ~ 27 <br>
+C: Inspection score 28 ~ more <br>
+
+```{r, warning=FALSE, message=FALSE}
+new_insp["grade"] <- NA
+
+#grade the restarants
+new_insp[which(new_insp$SCORE<=13),]$grade <- "A"
+new_insp[which(new_insp$SCORE<=27 & new_insp$SCORE>13),]$grade <- "B"
+new_insp[which(new_insp$SCORE>=28),]$grade <- "C"
+
+arranged  <- new_insp %>%
+        arrange(desc(DBA), desc(INSPECTION.DATE))
+
+# to get the most recent insp SCORE
+insp_sub <- subset(arranged,!duplicated(arranged$DBA))  
+```
+
+---
+
+## DATA Clean-up 
+
+#### ZAGAT data clean-up
+
+```{r, warning=FALSE, message=FALSE}
+z_nyc=data.frame(z_nyc, stringsAsFactors=FALSE)
+# delete space at the end
+z_nyc$restaurant <- gsub(" $","", z_nyc$restaurant, perl=T)
+# change ` to '
+z_nyc$restaurant <- gsub("’","'", z_nyc$restaurant) 
+# delete $ from cost column
+z_nyc$cost <- sub(pattern = "\\$", replacement = "", z_nyc$cost) 
+#change data type to numeric
+z_nyc$score_food <- as.numeric(z_nyc$score_food) 
+z_nyc$score_decor <- as.numeric(z_nyc$score_decor)
+z_nyc$score_service <- as.numeric(z_nyc$score_service)
+z_nyc$cost <- as.numeric(z_nyc$cost) 
+#clean restaurant names
+z_nyc$restaurant<- sub(pattern = "-", replacement = " ", z_nyc$restaurant)
+# delete dulpicate
+z_nyc <- subset(z_nyc,!duplicated(z_nyc$restaurant)) 
+z_nyc <- z_nyc %>% arrange(restaurant) 
+# add mean_score column 
+z_nyc$mean_score <- round(rowMeans(z_nyc[,2:4]),2) 
+z_nyc$restaurant <- toupper(z_nyc$restaurant)
+```
+
+---
+
+## Merge two tables
+
+#### Since the two tables are from different resourses, there is no primary key. I had to use restaurant names to merge them. For doing this, I cleaned up the each table's restaurant names at former process. I merged them in cases that the names exactly matched each other. Otherwise, I delete the records.
+
+```{r, warning=FALSE, message=FALSE}
+newdf <- merge(z_nyc, insp_sub, by.x="restaurant", by.y="DBA", all.x=TRUE)
+names(newdf)
+data <- newdf[c(1:10,15,16)] # select columns for analysis
+zagat <- data[!is.na(data$SCORE),] #delete NA rows 
+# change column names for convinient reason
+names(zagat)[names(zagat)=="CUISINE.DESCRIPTION"] <- "cuisine" 
+names(zagat)[names(zagat)=="SCORE"] <- "insp_score"
+head(zagat)
+```
+
+---
+
+## DATA Analysis
+
+```{r, warning=FALSE, message=FALSE}
+summary(zagat$insp_score)
+summary(insp$SCORE)
+aggregate(zagat$insp_score, by=list(zagat$grade), mean)
+aggregate(zagat$mean_score, by=list(zagat$grade), mean)
+zagat$geo <- geocode(paste(zagat$STREET, "New York", ","))
+NYC <- get_map(location=c(lon=-73.95, lat=40.75), zoom = 11, maptype = "roadmap", source="google")
+ggmap(NYC, extent = 'normal') +
+        geom_point(aes(x = geo$lon, y = geo$lat, colour = mean_score), data = zagat, alpha = .8)
+
+```
+
+---
+
+## DATA Analysis 
+
+#### Q. How many of ZAGAT's Best Restaurants get C grade in NYC inspection score?
+
+```{r, warning=FALSE, message=FALSE}
+
+ggplot(data=zagat, aes(grade, mean_score))+geom_boxplot()
+
+table(zagat$grade)
+```
+Most of "ZAGAT Best Restaurants" get A or B. Only 3 restaurants out of 107 got C grades at Health department Inspection. 
+
+---
+
+## DATA Analysis
+
+#### Q. What is the distribution of NYC Inspection Scores?
+A: Inspection score 0 ~ 13 <br>
+B: Inspection score 14 ~ 27 <br>
+C: Inspection score 28 ~ more <br>
+```{r, warning=FALSE, message=FALSE}
+
+#new york inspection score distribution
+ggplot(insp, aes(SCORE)) +
+         xlab("Inspection score") +
+         ylab("Number of Restaurants") +
+        geom_histogram(binwidth=1, color="black", fill="darkgoldenrod1") +
+        geom_vline(aes(xintercept=mean(SCORE, na.rm=T)),   
+                   color="red", alpha=0.5, size=2)+
+        geom_vline(aes(xintercept=mean(zagat$insp_score, na.rm=T)),   
+                   color="green", alpha=0.5, size=2)+
+        ggtitle("NYC INSPECTION SCORES")+
+        theme(plot.title = element_text(size=15, face="bold"))+
+         annotate("text", x = 22, y = 24000, label = "20.85 \n NYC mean of inspection score", col="darkblue", size=4)+
+        annotate("text", x = 13, y = 35000, label = "12.62 \n ZAGAT inspection mean score",col="darkblue", size=4)
+```
+
+---
+
+## DATA Analysis 
+
+#### Q. Are ZAGAT's Best Restaurants cleaner than NYC normal restaurants?
+
+```{r, warning=FALSE, message=FALSE}
+#rate of zagat restaurants having insp score more than NYC mean.
+sum(zagat$insp_score>20.85)/nrow(zagat) 
+ggplot(zagat, aes(insp_score))+geom_histogram(color="black",fill="brown3",binwidth=1)+
+         xlab("Inspection score") +
+         ylab("Number of Restaurants") +
+        geom_vline(aes(xintercept=mean(insp_score, na.rm=T)),   
+                   color="green", alpha=0.5, size=2)+
+        geom_vline(aes(xintercept=mean(insp$SCORE, na.rm=T)), 
+                   color="red", alpha=0.5, size=2)+
+        geom_vline(aes(xintercept=median(zagat$insp_score, na.rm=T)), 
+           color="blue", alpha=0.5, size=2)+
+         annotate("text", x = 21, y = 15, label = "20.85 \n NYC inspection mean score", col="darkblue", size=4)+
+         annotate("text", x = 13, y = 18, label = "12.62 \n ZAGAT inspection mean score",col="darkblue", size=4)+
+         annotate("text", x = 7, y = 20, label = "11.0 \n ZAGAT inspection median score",col="darkblue", size=4)+
+        ggtitle("ZAGAT Restaurants' Inspection Scores")+theme(plot.title = element_text(size=15, face="bold"))
+```
+
+---
+
+## DATA Analysis 
+
+#### Q. Are ZAGAT's Best Restaurants cleaner than NYC normal restaurants?
+
+H0: ZAGAT Best restaurants' Inspection score = General NYC restaurants' Inspection score <br>
+H1: ZAGAT Best restaurants' Inspection score != General NYC restaurants' Inspection score
+```{r}
+t.test(zagat$insp_score, insp$SCORE, paired=FALSE)
+```
+The analysis shows that only 15.89% of restaurants in "ZAGAT Best Restaurants" list got higher inspection scores than the mean of general NYC restaurants. This means that about 84% of ZAGAT restaurants are cleaner or healthier than an average NYC restaurant.
+Also, by the T-test, we got a very small p-value (2.2e-16). So this difference is statistically significant.
+
+---
+
+## DATA Analysis 
+
+#### Q. Are there any correlations between the scores?
+
+```{r, warning=FALSE, message=FALSE}
+
+pairs(~score_food+score_decor+score_service+cost+insp_score, data=zagat, 
+      panel=panel.smooth, main="ZAGAT Scatterplot Matrix")
+```
+
+---
+
+## DATA Analysis 
+
+```{r, warning=FALSE, message=FALSE}
+ggpairs(data=zagat, columns = c(2:6,11), title = "ZAGAT Scatterplot Matrix",
+        upper=list(continuous='cor'),
+        lower=list(continuous = 'smooth'),
+        diag=list(continuous='density'),
+        params=c(colour="blue", alpha=6/10),
+        axisLabels='show'
+)
+```
+
+The two graphs show that scores of decoration, service, and food increase along with the cost increase. However the rate of increase slowed as the restaurant cost got higher. Especially, a correlation between decoration score and sevice score is noticible, at 0.812.
+The correlation between NYC inspection score and others (cost, scores of decoration, sevice, food) is not apparent.
+
+---
+
+## DATA Analysis 
+
+#### Q. Does better ZAGAT score mean cleaner or healthier?
+
+#### Correlation between ZAGAT mean_score and NYC inspection score
+
+```{r, warning=FALSE, message=FALSE}
+zagat %>% ggvis(~mean_score, ~insp_score, opacity := 0.7) %>% layer_points() %>% layer_smooths(se=T, opacity := 0.5, span=0.5, stroke:="red")
+```
+
+When we see the above graph, we cannot find relations between ZAGAT score and Inspection score. We cannot tell if among ZAGAT restaurants, higer ZAGAT rated restaurants are cleaner than lower ZAGAT rated restaurants, or vice versa.
+
+---
+
+## DATA Analysis 
+
+#### Q. Did expensive ZAGAT restaurants get the better ZAGAT Score? 
+#### Q. Are expensive ZAGAT restaurants cleaner than cheaper ones'?
+
+#### Correlation between ZAGAT mean_score and cost depending on NYC inspection Grade
+
+
+```{r, warning=FALSE, message=FALSE}
+zagat$grade = factor(zagat$grade)
+zagat %>% ggvis(~mean_score, ~cost, fill= ~grade, opacity := 0.8) %>% layer_points() %>% layer_smooths(span=0.5, stroke:="red")
+```
+
+This shows that ZAGAT scores(here 'mean_score') tend to get higher along with increase of its cost. But the inspenction score grades (A,B,C) are scattered between low to high cost and ZAGAT score, so it appears to be unrelated. 
+
+---
+
+## Conclusion
+
+Based on the above analysis, restaurants included in the "ZAGAT Best-Restaurant" list tend to be cleaner and healthier than NYC general restaurants. Only 16.04% restaurants in the ZAGAT list have a higher inspection score than the mean of NYC restaurant inspection score. However, among the restaurants in the list, there is no specific correlation between inspection score and ZAGAT score. This means that even if a restaurant has high ZAGAT score, we can not tell that the restaurant is cleaner or healthier than other restaurants that have lower ZAGAT score. This makes sense since ZAGAT scores focus on taste, service, and decoration of restaurants, while Inspection score focuses on health laws.
+This anlysis also shows a noticible correlation(0.812) between decoration score and service score in ZAGAT ratings. However, we still cannot tell that nice interior restaurants actually have nice service. It is possible that the critic gave better service score under better atmoshpere.
+Because of the lack of cost data of non ZAGAT restaurant, I couldn't figure out if ZAGAT listed restaurants are better per cost. Given that ZAGAT list restaurants tend to be expensive, the better inspection score can relate to this price difference.
+
+
+
